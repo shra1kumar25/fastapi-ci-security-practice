@@ -1,0 +1,53 @@
+name: FastAPI Code Quality CI
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+permissions:
+  contents: read
+
+jobs:
+  code-quality:
+    name: Python Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+
+      - name: Check formatting with Black
+        run: python -m black --check app/
+
+      - name: Check import sorting with isort
+        run: python -m isort --check-only app/
+
+      - name: Run Ruff lint
+        run: ruff check app/
+
+      - name: Run mypy type checking
+        run: python -m mypy app/
+
+      - name: Run Bandit security scan
+        run: bandit -r app/ -ll
+
+      - name: Audit Python dependencies
+        run: python -m pip_audit -r requirements.txt
